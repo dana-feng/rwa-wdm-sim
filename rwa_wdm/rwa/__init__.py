@@ -5,5 +5,6 @@ from .rwa import (
     yen_vertex_coloring,
     yen_first_fit,
     yen_random_fit,
-    genetic_algorithm
+    genetic_algorithm,
+    acrwa_algorithm
 )

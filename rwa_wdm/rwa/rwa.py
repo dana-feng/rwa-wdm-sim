@@ -4,7 +4,7 @@ from ..net import Lightpath, Network
 from .routing import dijkstra, yen
 from .wlassignment import vertex_coloring, first_fit, random_fit
 from .ga import GeneticAlgorithm
-
+from .acrwa import AntColonyRWA
 __all__ = (
     'dijkstra_vertex_coloring',
     'dijkstra_first_fit',
@@ -42,7 +42,7 @@ def dijkstra_first_fit(net: Network, k: int) -> Union[Lightpath, None]:
     """Dijkstra and first-fit combination as RWA algorithm
 
     Args:
-        net: Network topology instance
+    net: Network topology instance
         k: number of alternate paths (ignored)
 
     Returns:
@@ -185,3 +185,25 @@ def genetic_algorithm(pop_size: int, num_gen: int,
     global ga
     ga = GeneticAlgorithm(pop_size, num_gen, cross_rate, mut_rate)
     return genetic_algorithm_callback
+
+def acrwa_callback(net: Network) -> Union[Lightpath, None]:
+    """Callback function to perform RWA via acrwa
+
+    Args:
+        net: Network topology instance
+
+    Returns:
+        Lightpath: if successful, returns both route and wavelength index as a
+            lightpath
+
+    """
+    route, wavelength = acrwa_algo.run(net)
+    if wavelength is not None and wavelength < net.nchannels:
+        return Lightpath(route, wavelength)
+    return None
+
+def acrwa_algorithm(net: Network) -> Callable:
+    global acrwa_algo
+    acrwa_algo = AntColonyRWA()
+    acrwa_algo.initialization(net)
+    return acrwa_callback

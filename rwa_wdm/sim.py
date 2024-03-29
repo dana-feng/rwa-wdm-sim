@@ -59,7 +59,7 @@ def get_net_instance_from_args(topname: str, numch: int) -> Network:
 
 def get_rwa_algorithm_from_args(r_alg: str, wa_alg: str, rwa_alg: str,
                                 ga_popsize: int, ga_ngen: int,
-                                ga_xrate: float, ga_mrate: float) -> Callable:
+                                ga_xrate: float, ga_mrate: float, net: Network) -> Callable:
     """Defines the main function to perform RWA from CLI string args
 
     Args:
@@ -115,6 +115,9 @@ def get_rwa_algorithm_from_args(r_alg: str, wa_alg: str, rwa_alg: str,
         if rwa_alg == 'genetic-algorithm':
             from .rwa import genetic_algorithm
             return genetic_algorithm(ga_popsize, ga_ngen, ga_xrate, ga_mrate)
+        elif rwa_alg =="acrwa":
+            from .rwa import acrwa_algorithm
+            return acrwa_algorithm(net)
         else:
             raise ValueError('Unknown RWA algorithm "%s"' % rwa_alg)
     else:
@@ -146,7 +149,7 @@ def simulator(args: Namespace) -> None:
         net = get_net_instance_from_args(args.topology, args.channels)
         rwa = get_rwa_algorithm_from_args(args.r, args.w, args.rwa,
                                           args.pop_size, args.num_gen,
-                                          args.cross_rate, args.mut_rate)
+                                          args.cross_rate, args.mut_rate, net)
         blocklist = []
         blocks_per_erlang = []
 
