@@ -165,17 +165,25 @@ def simulator(args: Namespace) -> None:
         # ascending loop through Erlangs
         for load in range(1, args.load + 1):
             blocks = 0
+            path_3_to_4_w_1 = 0
+            path_3_to_4_w_2 = 0
+            path_3_to_6_w_1 = 0
+            path_3_to_6_w_2 = 0
+            success = 0
             for call in range(args.calls):
+                print("call", call)
                 import random
 
                 # Generate net.d
-                net.d = random.randint(0, upper_bound)
+                net.d = 7
+                net.s = random.randint(0, 2)
+                # net.d = random.randint(0, upper_bound)
 
-                # Generate net.s repeatedly until it is different from net.d
-                while True:
-                    net.s = random.randint(0, upper_bound)
-                    if net.s != net.d:
-                        break
+                # # Generate net.s repeatedly until it is different from net.d
+                # while True:
+                #     net.s = random.randint(0, upper_bound)
+                #     if net.s != net.d:
+                #         break
                 # print('\rBlocks: ', end='', flush=True)
                 # for b in blocklist:
                 #     print('%04d ' % b, end='', flush=True)
@@ -207,6 +215,7 @@ def simulator(args: Namespace) -> None:
                     # on all remaining links of the route
                     for (i, j) in lightpath.links:
                         if not net.n[i][j][lightpath.w]:
+                            print("sad")
                             lightpath = None
                             break
 
@@ -216,8 +225,24 @@ def simulator(args: Namespace) -> None:
                 # lightpath.
                 if lightpath is None:
                     blocks += 1
+                    print("no success")
                 else:
-                    print("Lightpath hey", lightpath.r)
+                    success +=1
+                    print("LIGHTPATH", lightpath.r, lightpath.w)
+                    if lightpath.w == 0:
+                        if any([3,4]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+                            path_3_to_4_w_1 += 1
+                        elif any([3,6]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+
+                            path_3_to_6_w_1 += 1
+                            
+                    elif lightpath.w == 1:
+                        if any([3,4]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+                            path_3_to_4_w_2 += 1 
+                        elif any([3,6]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+                            path_3_to_6_w_2 += 1
+
+
                     lightpath.holding_time = holding_time
                     net.t.add_lightpath(lightpath)
                     for (i, j) in lightpath.links:
@@ -259,6 +284,11 @@ def simulator(args: Namespace) -> None:
                         # make matrices symmetric
                         net.t[j][i][w] = net.t[i][j][w]
                         net.n[j][i][w] = net.n[j][i][w]
+            print("TEST1", path_3_to_4_w_1 )
+            print("TEST2", path_3_to_4_w_2 )
+            print("TEST1", path_3_to_6_w_1 )
+            print("TEST2", path_3_to_6_w_2 )
+            print("successes", success)
 
             blocklist.append(blocks)
             blocks_per_erlang.append(100.0 * blocks / args.calls)

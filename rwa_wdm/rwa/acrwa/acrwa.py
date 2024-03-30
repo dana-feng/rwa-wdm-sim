@@ -26,7 +26,7 @@ class AntColonyRWA(object):
         self.beta = 1 # Placeholder for beta parameter
         self.omega = 0.75  # Placeholder for omega parameter
         self.phi = 0.75  # Placeholder for phi parameter
-        self.r0 = 0.9  # Placeholder for r0 parameter
+        self.r0 = 0.9 # Placeholder for r0 parameter
         self.candidate_nodes_list = {}
         self.candidate_lambdas_list = {}
         self.routing_tables = {} # self.routing_tables[n][m] holds the k shortest paths from n to m; since we have only one port per node, this means this will only hold one path
@@ -42,7 +42,7 @@ class AntColonyRWA(object):
             # Initialize routing tables using the routing protocol
             self.routing_tables[n] = {}
             for m in range(net.nnodes):
-                shortest_paths = yen(net.a, n, m, 10)
+                shortest_paths = yen(net.a, n, m, 11)
                 self.routing_tables[n][m] = shortest_paths# Routing table will be a list of the k shortest paths
                 # Build candidate nodes list and initialize desirability values
                 self.candidate_nodes_list[n] = list(set(path[1] for path in self.routing_tables[n][m] if len(path) > 1)) # Assuming self.routing_tables[n][m] returns a list of shortest paths
@@ -91,10 +91,14 @@ class AntColonyRWA(object):
         u = None
         # Initialize routing tables using the routing protocol
         for nodej in self.candidate_nodes_list[nodei]:
+            if nodej == 6 or nodej == 4:
+                print("nodej", nodej, "pheremone", self.pheromone_table[nodei][nodej][wavelengthk])
             curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(self.desirability[nodei]**self.beta)
             if best_product is None or best_product < curr_product:
                 best_product = curr_product
                 u = nodej
+        if (u == 4 and nodei == 3) or (u ==6 and nodei == 3):
+            print("exploit to go to ", u, "wavelength", wavelengthk)
         return u
 
     def explore(self, nodei, wavelengthk):
@@ -110,6 +114,8 @@ class AntColonyRWA(object):
         values = list(empirical_distribution.keys())
         probabilities = list(empirical_distribution.values())
         u = random.choices(values, weights=probabilities)[0]
+        if (u == 4 and nodei == 3) or (u ==6 and nodei == 3):
+            print("exploit to go to ", u, "wavelength", wavelengthk)
         return u
 
 
@@ -162,10 +168,7 @@ class AntColonyRWA(object):
                 self.currSrc = self.u
             else:
                 self.Antblocked = True
-        if self.Antblocked:
-            route = []
-        else:
-            route = [node[0] for node in self.xm[1:]] + [net.d]
+        route = [node[0] for node in self.xm[1:]] + [net.d]
         # Once done, the reverse ant runs
         # Repeat until xm(t) is empty or reverse ant arrives origin node
         self.reverse_path_length = 0
@@ -177,6 +180,8 @@ class AntColonyRWA(object):
             self.currSrc = dest
             self.reverse_path_length += 1
         # wavelength = random_fit(net, route)
+        if wavelength is not None:
+            print("route", route, "wavelength", wavelength)
         return route, wavelength
 
     # Placeholder functions
