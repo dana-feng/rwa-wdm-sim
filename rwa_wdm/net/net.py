@@ -281,10 +281,20 @@ class Network(object):
         """The source node"""
         return self._s
 
+    @s.setter
+    def s(self, value: int):
+        """Setter for the source node"""
+        self._s = value
+
     @property
     def d(self) -> int:
         """The destination node"""
         return self._d
+
+    @d.setter
+    def d(self, value: int):
+        """Setter for the destination node"""
+        self._d = value
 
     @property
     def name(self) -> str:

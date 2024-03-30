@@ -21,6 +21,7 @@ __all__ = (
 )
 
 logger = logging.getLogger(__name__)
+global upper_bound
 
 
 def get_net_instance_from_args(topname: str, numch: int) -> Network:
@@ -41,9 +42,12 @@ def get_net_instance_from_args(topname: str, numch: int) -> Network:
         ValueError: if `topname` is not a valid network identifier
 
     """
+    global upper_bound
+    upper_bound = 12
     if topname == 'nsf':
         from .net import NationalScienceFoundation
         return NationalScienceFoundation(numch)
+    
     elif topname == 'clara':
         from .net import CooperacionLatinoAmericana
         return CooperacionLatinoAmericana(numch)
@@ -53,6 +57,10 @@ def get_net_instance_from_args(topname: str, numch: int) -> Network:
     elif topname == 'rnp':
         from .net import RedeNacionalPesquisa
         return RedeNacionalPesquisa(numch)
+    elif topname == 'fish':
+        upper_bound = 7
+        from .net import Fish
+        return Fish(numch)
     else:
         raise ValueError('No network named "%s"' % topname)
 
@@ -136,6 +144,7 @@ def simulator(args: Namespace) -> None:
         args: set of arguments provided via CLI to argparse module
 
     """
+    global upper_bound
 
     # print header for pretty stdout console logging
     print('Load:   ', end='')
@@ -157,10 +166,20 @@ def simulator(args: Namespace) -> None:
         for load in range(1, args.load + 1):
             blocks = 0
             for call in range(args.calls):
-                print('\rBlocks: ', end='', flush=True)
-                for b in blocklist:
-                    print('%04d ' % b, end='', flush=True)
-                print(' %04d' % call, end='')
+                import random
+
+                # Generate net.d
+                net.d = random.randint(0, upper_bound)
+
+                # Generate net.s repeatedly until it is different from net.d
+                while True:
+                    net.s = random.randint(0, upper_bound)
+                    if net.s != net.d:
+                        break
+                # print('\rBlocks: ', end='', flush=True)
+                # for b in blocklist:
+                #     print('%04d ' % b, end='', flush=True)
+                # print(' %04d' % call, end='')
 
                 # Poisson arrival is modelled as an exponential distribution
                 # of times, according to Pawełczak's MATLAB package [1]:
@@ -198,6 +217,7 @@ def simulator(args: Namespace) -> None:
                 if lightpath is None:
                     blocks += 1
                 else:
+                    print("Lightpath hey", lightpath.r)
                     lightpath.holding_time = holding_time
                     net.t.add_lightpath(lightpath)
                     for (i, j) in lightpath.links:
@@ -246,7 +266,7 @@ def simulator(args: Namespace) -> None:
         sim_time = default_timer() - sim_time
         time_per_simulation.append(sim_time)
 
-        print('\rBlocks: ', end='', flush=True)
+        # print('\rBlocks: ', end='', flush=True)
         for b in blocklist:
             print('%04d ' % b, end='', flush=True)
         print('\n%-7s ' % 'BP (%):', end='')

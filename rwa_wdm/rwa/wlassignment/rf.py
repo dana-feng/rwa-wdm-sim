@@ -24,6 +24,7 @@ def random_fit(net: Network, route: List[int]) -> Union[int, None]:
             index to be used on the lightpath
 
     """
+    print("route", route)
     i, j = route[0], route[1]
     try:
         return np.random.choice(np.flatnonzero(net.n[i][j]))

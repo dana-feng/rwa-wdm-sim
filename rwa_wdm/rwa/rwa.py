@@ -186,7 +186,7 @@ def genetic_algorithm(pop_size: int, num_gen: int,
     ga = GeneticAlgorithm(pop_size, num_gen, cross_rate, mut_rate)
     return genetic_algorithm_callback
 
-def acrwa_callback(net: Network) -> Union[Lightpath, None]:
+def acrwa_callback(net: Network, k:int) -> Union[Lightpath, None]:
     """Callback function to perform RWA via acrwa
 
     Args:
@@ -197,8 +197,8 @@ def acrwa_callback(net: Network) -> Union[Lightpath, None]:
             lightpath
 
     """
-    route, wavelength = acrwa_algo.run(net)
-    if wavelength is not None and wavelength < net.nchannels:
+    route, wavelength = acrwa_algo.run(net, k)
+    if wavelength is not None and wavelength < net.nchannels and route:
         return Lightpath(route, wavelength)
     return None
 

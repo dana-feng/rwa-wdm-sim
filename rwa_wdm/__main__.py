@@ -35,7 +35,7 @@ ga = parser.add_argument_group('Genetic algorithm options')
 
 # network topology options
 net.add_argument('-t', default='nsf', dest='topology',
-                 choices=['nsf', 'clara', 'janet', 'rnp'],
+                 choices=['nsf', 'clara', 'janet', 'rnp', 'fish'],
                  metavar='<topology>',
                  help='network topology')
 net.add_argument('-c', type=int, default=8, dest='channels',
@@ -53,7 +53,7 @@ rwa.add_argument('-w', metavar='<algorithm>',
                  choices=['vertex-coloring', 'first-fit', 'random-fit'],
                  help='wavelength assignment algorithm')
 rwa.add_argument('--rwa', metavar='<algorithm>',
-                 choices=['genetic-algorithm'],
+                 choices=['genetic-algorithm', "acrwa"],
                  help='routing *and* wavelength assigment algorithm')
 rwa.add_argument('-y', metavar='<yen-alt-paths>', type=int,
                  default=2, choices=range(2, 5),
