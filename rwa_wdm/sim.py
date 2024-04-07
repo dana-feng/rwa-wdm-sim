@@ -13,7 +13,7 @@ import numpy as np
 
 from .io import write_bp_to_disk, write_it_to_disk, plot_bp
 from .net import Network
-
+from .rwa import spff_algorithm
 __all__ = (
     'get_net_instance_from_args',
     'get_rwa_algorithm_from_args',
@@ -61,6 +61,9 @@ def get_net_instance_from_args(topname: str, numch: int) -> Network:
         upper_bound = 7
         from .net import Fish
         return Fish(numch)
+    elif topname == "de_graph":
+        from .net import DE_Graph
+        return DE_Graph(numch)
     else:
         raise ValueError('No network named "%s"' % topname)
 
@@ -126,6 +129,9 @@ def get_rwa_algorithm_from_args(r_alg: str, wa_alg: str, rwa_alg: str,
         elif rwa_alg =="acrwa":
             from .rwa import acrwa_algorithm
             return acrwa_algorithm(net)
+        elif rwa_alg == "de":
+            from .rwa import de_algorithm
+            return de_algorithm(net)
         else:
             raise ValueError('Unknown RWA algorithm "%s"' % rwa_alg)
     else:
@@ -159,6 +165,19 @@ def simulator(args: Namespace) -> None:
         rwa = get_rwa_algorithm_from_args(args.r, args.w, args.rwa,
                                           args.pop_size, args.num_gen,
                                           args.cross_rate, args.mut_rate, net)
+        if args.rwa == "de":
+            print("DIFFERENTIAL EVOLUTION")
+            APL, NWR, value = rwa(net, args.y) # run once since its computing a optimization value
+            print("APL", APL)
+            print("NWR", NWR)
+            print("Fitness value", value)
+            print("SHORTEST PATHS/FF")
+            APL, NWR, value = spff_algorithm(net)(net, args.y) # run once since its computing a optimization value
+            print("APL", APL)
+            print("NWR", NWR)
+            print("Fitness value", value)
+            return 
+        
         blocklist = []
         blocks_per_erlang = []
 
@@ -174,16 +193,19 @@ def simulator(args: Namespace) -> None:
                 print("call", call)
                 import random
 
-                # Generate net.d
-                net.d = 7
-                net.s = random.randint(0, 2)
-                # net.d = random.randint(0, upper_bound)
+                # Uncomment for fish network
+                # net.d = 7
+                # net.s = random.randint(0, 2)
 
-                # # Generate net.s repeatedly until it is different from net.d
-                # while True:
-                #     net.s = random.randint(0, upper_bound)
-                #     if net.s != net.d:
-                #         break
+                # Uncomment for any other network
+                net.d = random.randint(0, upper_bound)
+
+                while True:
+                    net.s = random.randint(0, upper_bound)
+                    if net.s != net.d:
+                        break
+
+                
                 # print('\rBlocks: ', end='', flush=True)
                 # for b in blocklist:
                 #     print('%04d ' % b, end='', flush=True)

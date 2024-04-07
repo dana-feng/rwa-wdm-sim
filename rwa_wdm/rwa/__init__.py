@@ -6,5 +6,7 @@ from .rwa import (
     yen_first_fit,
     yen_random_fit,
     genetic_algorithm,
-    acrwa_algorithm
+    acrwa_algorithm,
+    de_algorithm,
+    spff_algorithm
 )

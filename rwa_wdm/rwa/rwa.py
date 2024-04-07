@@ -5,6 +5,7 @@ from .routing import dijkstra, yen
 from .wlassignment import vertex_coloring, first_fit, random_fit
 from .ga import GeneticAlgorithm
 from .acrwa import AntColonyRWA
+from .de import DE, SPFF
 __all__ = (
     'dijkstra_vertex_coloring',
     'dijkstra_first_fit',
@@ -207,3 +208,33 @@ def acrwa_algorithm(net: Network) -> Callable:
     acrwa_algo = AntColonyRWA()
     acrwa_algo.initialization(net)
     return acrwa_callback
+
+
+def de_algorithm(net: Network) -> Callable:
+    global de_algo
+    de_algo = DE(net)
+    return de_callback
+
+
+def de_callback(net: Network, k:int) -> Union[Lightpath, None]:
+    """Callback function to perform RWA via acrwa
+
+    Args:
+        net: Network topology instance
+
+    Returns:
+        Lightpath: if successful, returns both route and wavelength index as a
+            lightpath
+
+    """
+    result = de_algo.run(net, k)
+    return result
+
+def spff_algorithm(net: Network) -> Callable:
+    global spff_algo
+    spff_algo = SPFF(net)
+    return spff_callback
+
+def spff_callback(net, k):
+    result = spff_algo.run(net, k)
+    return result
