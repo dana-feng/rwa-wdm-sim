@@ -26,6 +26,6 @@ def dijkstra(mat: np.ndarray, s: int, d: int) -> List[int]:
         raise ValueError('Source nor destination nodes should exceed '
                          'adjacency matrix dimensions')
 
-    G = nx.from_numpy_matrix(mat, create_using=nx.Graph())
+    G = nx.from_numpy_array(mat, create_using=nx.Graph())
     hops, path = nx.bidirectional_dijkstra(G, s, d, weight=None)
     return path

@@ -8,5 +8,6 @@ from .rwa import (
     genetic_algorithm,
     acrwa_algorithm,
     de_algorithm,
-    spff_algorithm
+    spff_algorithm,
+    abcrwa_algorithm
 )

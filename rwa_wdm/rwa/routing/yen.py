@@ -29,6 +29,6 @@ def yen(mat: np.ndarray, s: int, d: int, k: int) -> List[List[int]]:
     if k < 0:
         raise ValueError('Number of alternate paths should be positive')
 
-    G = nx.from_numpy_matrix(mat, create_using=nx.Graph())
+    G = nx.from_numpy_array(mat, create_using=nx.Graph())
     paths = list(nx.shortest_simple_paths(G, s, d, weight=None))
     return paths[:k]

@@ -47,7 +47,7 @@ def get_net_instance_from_args(topname: str, numch: int) -> Network:
     if topname == 'nsf':
         from .net import NationalScienceFoundation
         return NationalScienceFoundation(numch)
-    
+
     elif topname == 'clara':
         from .net import CooperacionLatinoAmericana
         return CooperacionLatinoAmericana(numch)
@@ -86,7 +86,7 @@ def get_rwa_algorithm_from_args(r_alg: str, wa_alg: str, rwa_alg: str,
         callable: a function that combines a routing algorithm and a
             wavelength assignment algorithm if those are provided
             separately, or an all-in-one RWA procedure
-    
+
     Raises:
         ValueError: if neither `rwa_alg` nor both `r_alg` and `wa_alg`
             are provided
@@ -126,12 +126,15 @@ def get_rwa_algorithm_from_args(r_alg: str, wa_alg: str, rwa_alg: str,
         if rwa_alg == 'genetic-algorithm':
             from .rwa import genetic_algorithm
             return genetic_algorithm(ga_popsize, ga_ngen, ga_xrate, ga_mrate)
-        elif rwa_alg =="acrwa":
+        elif rwa_alg == "acrwa":
             from .rwa import acrwa_algorithm
             return acrwa_algorithm(net)
         elif rwa_alg == "de":
             from .rwa import de_algorithm
             return de_algorithm(net)
+        elif rwa_alg == "abcrwa":
+            from .rwa import abcrwa_algorithm
+            return abcrwa_algorithm(net)
         else:
             raise ValueError('Unknown RWA algorithm "%s"' % rwa_alg)
     else:
@@ -167,17 +170,19 @@ def simulator(args: Namespace) -> None:
                                           args.cross_rate, args.mut_rate, net)
         if args.rwa == "de":
             print("DIFFERENTIAL EVOLUTION")
-            APL, NWR, value = rwa(net, args.y) # run once since its computing a optimization value
+            # run once since its computing a optimization value
+            APL, NWR, value = rwa(net, args.y)
             print("APL", APL)
             print("NWR", NWR)
             print("Fitness value", value)
             print("SHORTEST PATHS/FF")
-            APL, NWR, value = spff_algorithm(net)(net, args.y) # run once since its computing a optimization value
+            # run once since its computing a optimization value
+            APL, NWR, value = spff_algorithm(net)(net, args.y)
             print("APL", APL)
             print("NWR", NWR)
             print("Fitness value", value)
-            return 
-        
+            return
+
         blocklist = []
         blocks_per_erlang = []
 
@@ -205,7 +210,6 @@ def simulator(args: Namespace) -> None:
                     if net.s != net.d:
                         break
 
-                
                 # print('\rBlocks: ', end='', flush=True)
                 # for b in blocklist:
                 #     print('%04d ' % b, end='', flush=True)
@@ -236,6 +240,7 @@ def simulator(args: Namespace) -> None:
                     # check if the color chosen at the first link is available
                     # on all remaining links of the route
                     for (i, j) in lightpath.links:
+                        # print("link on lightpath is", (i, j))
                         if not net.n[i][j][lightpath.w]:
                             print("sad")
                             lightpath = None
@@ -249,21 +254,20 @@ def simulator(args: Namespace) -> None:
                     blocks += 1
                     print("no success")
                 else:
-                    success +=1
+                    success += 1
                     print("LIGHTPATH", lightpath.r, lightpath.w)
                     if lightpath.w == 0:
-                        if any([3,4]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+                        if any([3, 4] == lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
                             path_3_to_4_w_1 += 1
-                        elif any([3,6]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+                        elif any([3, 6] == lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
 
                             path_3_to_6_w_1 += 1
-                            
-                    elif lightpath.w == 1:
-                        if any([3,4]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
-                            path_3_to_4_w_2 += 1 
-                        elif any([3,6]== lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
-                            path_3_to_6_w_2 += 1
 
+                    elif lightpath.w == 1:
+                        if any([3, 4] == lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+                            path_3_to_4_w_2 += 1
+                        elif any([3, 6] == lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
+                            path_3_to_6_w_2 += 1
 
                     lightpath.holding_time = holding_time
                     net.t.add_lightpath(lightpath)
@@ -306,10 +310,10 @@ def simulator(args: Namespace) -> None:
                         # make matrices symmetric
                         net.t[j][i][w] = net.t[i][j][w]
                         net.n[j][i][w] = net.n[j][i][w]
-            print("TEST1", path_3_to_4_w_1 )
-            print("TEST2", path_3_to_4_w_2 )
-            print("TEST1", path_3_to_6_w_1 )
-            print("TEST2", path_3_to_6_w_2 )
+            print("TEST1", path_3_to_4_w_1)
+            print("TEST2", path_3_to_4_w_2)
+            print("TEST1", path_3_to_6_w_1)
+            print("TEST2", path_3_to_6_w_2)
             print("successes", success)
 
             blocklist.append(blocks)

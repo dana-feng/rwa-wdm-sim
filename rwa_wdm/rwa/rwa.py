@@ -6,6 +6,7 @@ from .wlassignment import vertex_coloring, first_fit, random_fit
 from .ga import GeneticAlgorithm
 from .acrwa import AntColonyRWA
 from .de import DE, SPFF
+from .abcrwa import ArtificialBeeColonyRWA
 __all__ = (
     'dijkstra_vertex_coloring',
     'dijkstra_first_fit',
@@ -187,7 +188,8 @@ def genetic_algorithm(pop_size: int, num_gen: int,
     ga = GeneticAlgorithm(pop_size, num_gen, cross_rate, mut_rate)
     return genetic_algorithm_callback
 
-def acrwa_callback(net: Network, k:int) -> Union[Lightpath, None]:
+
+def acrwa_callback(net: Network, k: int) -> Union[Lightpath, None]:
     """Callback function to perform RWA via acrwa
 
     Args:
@@ -203,6 +205,25 @@ def acrwa_callback(net: Network, k:int) -> Union[Lightpath, None]:
         return Lightpath(route, wavelength)
     return None
 
+
+def abcrwa_callback(net: Network, k: int) -> Union[Lightpath, None]:
+    """Callback function to perform RWA via ABCRWA
+
+    Args:
+        net: Network topology instance
+        k: number of alternate paths (ignored)
+
+    Returns:
+        Lightpath: if successful, returns both route and wavelength index as a
+            lightpath
+
+    """
+    route, wavelength = abcrwa_algo.run(net)
+    if wavelength is not None and wavelength < net.nchannels and route:
+        return Lightpath(route, wavelength)
+    return None
+
+
 def acrwa_algorithm(net: Network) -> Callable:
     global acrwa_algo
     acrwa_algo = AntColonyRWA()
@@ -216,7 +237,14 @@ def de_algorithm(net: Network) -> Callable:
     return de_callback
 
 
-def de_callback(net: Network, k:int) -> Union[Lightpath, None]:
+def abcrwa_algorithm(net: Network) -> Callable:
+    global abcrwa_algo
+    abcrwa_algo = ArtificialBeeColonyRWA()
+    abcrwa_algo.initialization(net)
+    return abcrwa_callback
+
+
+def de_callback(net: Network, k: int) -> Union[Lightpath, None]:
     """Callback function to perform RWA via acrwa
 
     Args:
@@ -230,10 +258,12 @@ def de_callback(net: Network, k:int) -> Union[Lightpath, None]:
     result = de_algo.run(net, k)
     return result
 
+
 def spff_algorithm(net: Network) -> Callable:
     global spff_algo
     spff_algo = SPFF(net)
     return spff_callback
+
 
 def spff_callback(net, k):
     result = spff_algo.run(net, k)

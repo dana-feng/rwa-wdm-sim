@@ -108,7 +108,7 @@ class AdjacencyMatrix(np.ndarray):
 
     def __new__(cls, num_nodes: int):
         arr = np.zeros((num_nodes, num_nodes))
-        obj = np.asarray(arr, dtype=np.bool).view(cls)
+        obj = np.asarray(arr, dtype=np.bool_).view(cls)
 
         return obj
 
@@ -134,7 +134,7 @@ class WavelengthAvailabilityMatrix(np.ndarray):
 
     def __new__(cls, num_nodes: int, num_ch: int):
         arr = np.zeros((num_nodes, num_nodes, num_ch))
-        obj = np.asarray(arr, dtype=np.bool).view(cls)
+        obj = np.asarray(arr, dtype=np.bool_).view(cls)
 
         return obj
 

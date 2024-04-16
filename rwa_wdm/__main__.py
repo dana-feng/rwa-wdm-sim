@@ -20,8 +20,10 @@ logger = logging.getLogger(__name__)
 TEMP_DIR = os.path.join(tempfile.gettempdir(), 'rwa_results')
 
 
-fmt = lambda prog: argparse.ArgumentDefaultsHelpFormatter(
+def fmt(prog): return argparse.ArgumentDefaultsHelpFormatter(
     "python -m rwa_wdm", width=220, max_help_position=250)
+
+
 parser = argparse.ArgumentParser(
     formatter_class=fmt,
     description='RWA WDM Simulator: routing and wavelength assignment '
@@ -53,7 +55,7 @@ rwa.add_argument('-w', metavar='<algorithm>',
                  choices=['vertex-coloring', 'first-fit', 'random-fit'],
                  help='wavelength assignment algorithm')
 rwa.add_argument('--rwa', metavar='<algorithm>',
-                 choices=['genetic-algorithm', "acrwa", "de"],
+                 choices=['genetic-algorithm', "acrwa", "de", "abcrwa"],
                  help='routing *and* wavelength assigment algorithm')
 rwa.add_argument('-y', metavar='<yen-alt-paths>', type=int,
                  default=2, choices=range(2, 5),
