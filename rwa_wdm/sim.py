@@ -242,7 +242,6 @@ def simulator(args: Namespace) -> None:
                     for (i, j) in lightpath.links:
                         # print("link on lightpath is", (i, j))
                         if not net.n[i][j][lightpath.w]:
-                            print("sad")
                             lightpath = None
                             break
 
@@ -252,10 +251,8 @@ def simulator(args: Namespace) -> None:
                 # lightpath.
                 if lightpath is None:
                     blocks += 1
-                    print("no success")
                 else:
                     success += 1
-                    print("LIGHTPATH", lightpath.r, lightpath.w)
                     if lightpath.w == 0:
                         if any([3, 4] == lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
                             path_3_to_4_w_1 += 1

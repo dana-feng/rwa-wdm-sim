@@ -23,16 +23,17 @@ class AntColonyRWA(object):
         # Initialize parameters
         self.alpha1 = 0.001  # Placeholder for alpha1 parameter
         self.rho1 = 0.001  # Placeholder for rho1 parameter
-        self.beta = 1 # Placeholder for beta parameter
+        self.beta = 1  # Placeholder for beta parameter
         self.omega = 0.75  # Placeholder for omega parameter
         self.phi = 0.75  # Placeholder for phi parameter
-        self.r0 = 0.9 # Placeholder for r0 parameter
+        self.r0 = 0.9  # Placeholder for r0 parameter
         self.candidate_nodes_list = {}
         self.candidate_lambdas_list = {}
-        self.routing_tables = {} # self.routing_tables[n][m] holds the k shortest paths from n to m; since we have only one port per node, this means this will only hold one path
+        # self.routing_tables[n][m] holds the k shortest paths from n to m; since we have only one port per node, this means this will only hold one path
+        self.routing_tables = {}
         self.desirability = {}
         self.pheromone_table = {}
-    
+
     def initialization(self, net: Network):
         """
         Initialize parameters, routing tables, candidate lists, and desirability values.
@@ -43,9 +44,11 @@ class AntColonyRWA(object):
             self.routing_tables[n] = {}
             for m in range(net.nnodes):
                 shortest_paths = yen(net.a, n, m, 11)
-                self.routing_tables[n][m] = shortest_paths# Routing table will be a list of the k shortest paths
+                # Routing table will be a list of the k shortest paths
+                self.routing_tables[n][m] = shortest_paths
                 # Build candidate nodes list and initialize desirability values
-                self.candidate_nodes_list[n] = list(set(path[1] for path in self.routing_tables[n][m] if len(path) > 1)) # Assuming self.routing_tables[n][m] returns a list of shortest paths
+                self.candidate_nodes_list[n] = list(set(path[1] for path in self.routing_tables[n][m] if len(
+                    path) > 1))  # Assuming self.routing_tables[n][m] returns a list of shortest paths
                 self.desirability[n] = 1/len(self.routing_tables[n][m][0])
                 # Initialize candidate lambdas list
                 self.candidate_lambdas_list[n] = list(range(net.nchannels))
@@ -58,19 +61,25 @@ class AntColonyRWA(object):
                     # Use range function directly, no need to convert to list
 
                     path_length = len(self.routing_tables[i][j][0])
-                    congestion_level = net.a[i][j]  # Assuming this is the congestion level, not the number of free wavelengths
+                    # Assuming this is the congestion level, not the number of free wavelengths
+                    congestion_level = net.a[i][j]
 
                     if i not in self.pheromone_table:
-                        self.pheromone_table[i] = {}  # Initialize if not exists
+                        # Initialize if not exists
+                        self.pheromone_table[i] = {}
 
                     if j not in self.pheromone_table[i]:
-                        self.pheromone_table[i][j] = {}  # Initialize if not exists
+                        # Initialize if not exists
+                        self.pheromone_table[i][j] = {}
 
                     if wavelength not in self.pheromone_table[i][j]:
-                        self.pheromone_table[i][j][wavelength] = 0  # Initialize if not exists
+                        # Initialize if not exists
+                        self.pheromone_table[i][j][wavelength] = 0
 
-                    self.pheromone_table[i][j][wavelength] = 1 / (path_length * net.nnodes) # TODO not sure if this is right
-    
+                    # TODO not sure if this is right
+                    self.pheromone_table[i][j][wavelength] = 1 / \
+                        (path_length * net.nnodes)
+
     def RWA(self, nodei, net):
         best_product = None
         u = None
@@ -78,48 +87,45 @@ class AntColonyRWA(object):
         # Initialize routing tables using the routing protocol
         for nodej in self.candidate_nodes_list[nodei]:
             for wavelengthk in self.candidate_lambdas_list[nodei]:
-                if net.n[nodei][nodej][wavelengthk]: # if free
-                    curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(self.desirability[nodei]**self.beta)
+                if net.n[nodei][nodej][wavelengthk]:  # if free
+                    curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(
+                        self.desirability[nodei]**self.beta)
                     if best_product is None or best_product < curr_product:
                         best_product = curr_product
                         u = nodej
                         lmbda = wavelengthk
         return (net.s, u, lmbda)
-    
+
     def exploit(self, nodei, wavelengthk):
         best_product = None
         u = None
         # Initialize routing tables using the routing protocol
         for nodej in self.candidate_nodes_list[nodei]:
-            if nodej == 6 or nodej == 4:
-                print("nodej", nodej, "pheremone", self.pheromone_table[nodei][nodej][wavelengthk])
-            curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(self.desirability[nodei]**self.beta)
+            curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(
+                self.desirability[nodei]**self.beta)
             if best_product is None or best_product < curr_product:
                 best_product = curr_product
                 u = nodej
-        if (u == 4 and nodei == 3) or (u ==6 and nodei == 3):
-            print("exploit to go to ", u, "wavelength", wavelengthk)
         return u
 
     def explore(self, nodei, wavelengthk):
         empirical_distribution = {}
         running_sum = 0
         for nodej in self.candidate_nodes_list[nodei]:
-            curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(self.desirability[nodei]**self.beta)
+            curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(
+                self.desirability[nodei]**self.beta)
             running_sum += curr_product
             empirical_distribution[nodej] = curr_product
-        
-        empirical_distribution = {key: value / running_sum for key, value in empirical_distribution.items()}
+
+        empirical_distribution = {
+            key: value / running_sum for key, value in empirical_distribution.items()}
 
         values = list(empirical_distribution.keys())
         probabilities = list(empirical_distribution.values())
         u = random.choices(values, weights=probabilities)[0]
-        if (u == 4 and nodei == 3) or (u ==6 and nodei == 3):
-            print("exploit to go to ", u, "wavelength", wavelengthk)
         return u
 
-
-    def run(self, net: Network, k:int) -> Tuple[List[int], Union[int, None]]:
+    def run(self, net: Network, k: int) -> Tuple[List[int], Union[int, None]]:
         """Run the ACRWA algorithm
 
         Args:
@@ -134,7 +140,7 @@ class AntColonyRWA(object):
         route = []  # Placeholder for route
         wavelength = None  # Placeholder for wavelength
 
-        self.xm = [] # Placeholder for xm(t)
+        self.xm = []  # Placeholder for xm(t)
         self.Antblocked = False
         self.currSrc = net.s
         self.u = None
@@ -194,13 +200,15 @@ class AntColonyRWA(object):
 
     def reverse_ant_arrives_origin_node(self, net):
         return self.currSrc == net.s
-    
+
     def run_positive_local_updating_rule(self, net):
         ant_path_length = len(self.xm)
-        delta = ant_path_length - len(self.routing_tables[self.currSrc][net.s][0])
+        delta = ant_path_length - \
+            len(self.routing_tables[self.currSrc][net.s][0])
         tauijk = self.pheromone_table[self.currSrc][net.d][self.lmbda]
-        self.pheromone_table[self.currSrc][net.d][self.lmbda] = tauijk + self.alpha1*math.exp(-1*self.phi*delta)
-    
+        self.pheromone_table[self.currSrc][net.d][self.lmbda] = tauijk + \
+            self.alpha1*math.exp(-1*self.phi*delta)
+
     def get_gammaij(self, link):
         if link in self.xm:
             if self.success:
@@ -209,11 +217,13 @@ class AntColonyRWA(object):
                 return -1
         else:
             return 0
-        
+
     def run_global_updating_rule(self, link, net):
         src, dest, k = link
         tauijk = self.pheromone_table[src][dest][k]
         gammaij = self.get_gammaij(link)
-        delta = self.reverse_path_length - len(self.routing_tables[self.currSrc][net.s][0])
+        delta = self.reverse_path_length - \
+            len(self.routing_tables[self.currSrc][net.s][0])
         delta_tau_ijk = math.exp(-1*self.omega*delta)
-        self.pheromone_table[src][dest][k] = (1-self.rho1)*tauijk + self.rho1*gammaij*delta_tau_ijk
+        self.pheromone_table[src][dest][k] = (
+            1-self.rho1)*tauijk + self.rho1*gammaij*delta_tau_ijk

@@ -32,6 +32,28 @@ class ArtificialBeeColonyRWA:
         """
         self.colony_size = colony_size
         self.max_cycles = max_cycles
+        self.routing_table = None
+
+    def generate_routing_table(self, net: Network):
+        """
+        Initializes the routing table with the k-shortest paths between all pairs of nodes
+        in the network using the Yen's algorithm.
+
+        Args:
+            net (Network): The network topology on which the RWA is being performed.
+
+        Returns:
+            routing_table: Dict[(int, int), List[List[int]]], a dictionary of tuples (i,j)
+            that corresponds to the list of k-shortest paths from node i to node j in the network.
+        """
+        routing_table = {}
+        # Loop over all pairs of nodes to populate the routing table
+        for i in range(net.nnodes):
+            for j in range(net.nnodes):
+                if i != j:
+                    shortest_paths = yen(net.a, i, j, self.colony_size)
+                    routing_table[(i, j)] = shortest_paths
+        return routing_table
 
     def initialization(self, net: Network) -> None:
         """
@@ -40,6 +62,9 @@ class ArtificialBeeColonyRWA:
         Args:
             net (Network): The network topology on which the RWA is being performed.
         """
+        if not self.routing_table:
+            self.routing_table = self.generate_routing_table(net)
+
         self.solutions = self.generate_initial_solutions(net)
         self.best_solution = None
         self.best_fitness = float('inf')
@@ -56,7 +81,7 @@ class ArtificialBeeColonyRWA:
             List[Dict[str, List[int]]]: A list of initial solutions containing paths and wavelengths.
         """
         initial_solutions = []
-        shortest_paths = yen(net.a, net.s, net.d, self.colony_size)
+        shortest_paths = self.routing_table[(net.s, net.d)]
         for path in shortest_paths:
             wavelength = random.randint(0, net.nchannels - 1)
             initial_solutions.append({'path': path, 'wavelength': wavelength})
@@ -140,6 +165,43 @@ class ArtificialBeeColonyRWA:
             self.best_fitness = new_fitness
             self.best_solution = solution.copy()
 
+    # GREEDY MODFICATION
+    def greedy_modify_solution(self, solution: Dict[str, any], net: Network) -> None:
+        """
+        Tries to modify a solution by changing one node in the path or the wavelength.
+        The modification is kept only if it improves the fitness of the solution.
+
+        Args:
+            solution (Dict[str, any]): The solution to be modified.
+            net (Network): The network topology for context.
+        """
+        # Store original details to possibly revert changes
+        original_path = solution['path'][:]
+        original_wavelength = solution['wavelength']
+        original_fitness = self.fitness_function(solution, net)
+
+        # Decide whether to change the path or the wavelength
+        if len(original_path) > 2 and random.random() < 0.5:
+            pos = random.randint(1, len(original_path) - 2)
+            neighbors = [j for j in range(
+                net.nnodes) if net.a[original_path[pos-1]][j] == 1 and j != original_path[pos+1]]
+            if neighbors:
+                solution['path'][pos] = random.choice(neighbors)
+        else:
+            solution['wavelength'] = random.randint(0, net.nchannels - 1)
+
+        # Calculate new fitness and decide whether to keep the changes
+        new_fitness = self.fitness_function(solution, net)
+        if new_fitness >= original_fitness:
+            # Revert to original if no improvement
+            solution['path'] = original_path
+            solution['wavelength'] = original_wavelength
+        else:
+            # Update best solution if this is the best seen so far globally
+            if new_fitness < self.best_fitness:
+                self.best_fitness = new_fitness
+                self.best_solution = solution.copy()
+
     def onlooker_bee_phase(self, net: Network) -> None:
         """
         Onlooker bees choose and further modify solutions based on their fitness probabilities.
@@ -168,7 +230,7 @@ class ArtificialBeeColonyRWA:
             net (Network): The network topology used for generating new solutions.
         """
         for i in range(self.colony_size):
-            if random.random() < 0.1:  # Low probability to regenerate a solution
+            if random.random() < 0.2:  # Low probability to regenerate a solution
                 self.solutions[i] = self.generate_random_solution(
                     net)  # TODO: Reconsider, as the solution might no longer be valid
                 fitness = self.fitness_function(self.solutions[i], net)
