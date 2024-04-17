@@ -91,14 +91,14 @@ class AntColonyRWA(object):
         u = None
         # Initialize routing tables using the routing protocol
         for nodej in self.candidate_nodes_list[nodei]:
-            if nodej == 6 or nodej == 4:
-                print("nodej", nodej, "pheremone", self.pheromone_table[nodei][nodej][wavelengthk])
+            # if nodej == 6 or nodej == 4:
+            #     print("nodej", nodej, "pheremone", self.pheromone_table[nodei][nodej][wavelengthk])
             curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(self.desirability[nodei]**self.beta)
             if best_product is None or best_product < curr_product:
                 best_product = curr_product
                 u = nodej
-        if (u == 4 and nodei == 3) or (u ==6 and nodei == 3):
-            print("exploit to go to ", u, "wavelength", wavelengthk)
+        # if (u == 4 and nodei == 3) or (u ==6 and nodei == 3):
+        #     print("exploit to go to ", u, "wavelength", wavelengthk)
         return u
 
     def explore(self, nodei, wavelengthk):

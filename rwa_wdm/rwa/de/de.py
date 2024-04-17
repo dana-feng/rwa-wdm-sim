@@ -30,13 +30,13 @@ class DE:
             for m in range(n + 1, net.nnodes):
                 self.k_shortest_paths[n][m] = []
                 self.k_shortest_paths[n][m].extend(yen(net.a, n, m, self.k))
-        print("shortest paths", self.k_shortest_paths)
 
         # calculate n1 and n2
         APL = 0
         for n in range(net.nnodes):
             for m in range(n + 1, net.nnodes):
-                APL += len(self.k_shortest_paths[n][m][2])
+                max_index = len(self.k_shortest_paths[n][m]) - 1
+                APL += len(self.k_shortest_paths[n][m][max_index])
         APL = APL / (net.nnodes * (net.nnodes - 1))
         self.n1 = net.nnodes
         self.n2 = APL

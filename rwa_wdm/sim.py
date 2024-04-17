@@ -12,8 +12,8 @@ from argparse import Namespace
 import numpy as np
 
 from .io import write_bp_to_disk, write_it_to_disk, plot_bp
-from .net import Network
-from .rwa import spff_algorithm
+from .net import Network, DE_Graph_Custom
+from .rwa import spff_algorithm, de_algorithm
 __all__ = (
     'get_net_instance_from_args',
     'get_rwa_algorithm_from_args',
@@ -159,29 +159,51 @@ def simulator(args: Namespace) -> None:
     print('Load:   ', end='')
     for i in range(1, args.load + 1):
         print('%4d' % i, end=' ')
-    print()
 
     time_per_simulation = []
     for simulation in range(args.num_sim):
         sim_time = default_timer()
-        net = get_net_instance_from_args(args.topology, args.channels)
-        rwa = get_rwa_algorithm_from_args(args.r, args.w, args.rwa,
-                                          args.pop_size, args.num_gen,
-                                          args.cross_rate, args.mut_rate, net)
+        # net = get_net_instance_from_args(args.topology, args.channels)
+        # rwa = get_rwa_algorithm_from_args(args.r, args.w, args.rwa,
+        #                                   args.pop_size, args.num_gen,
+        #                                   args.cross_rate, args.mut_rate, net)
         if args.rwa == "de":
-            print("DIFFERENTIAL EVOLUTION")
-            # run once since its computing a optimization value
-            APL, NWR, value = rwa(net, args.y)
-            print("APL", APL)
-            print("NWR", NWR)
-            print("Fitness value", value)
-            print("SHORTEST PATHS/FF")
-            # run once since its computing a optimization value
-            APL, NWR, value = spff_algorithm(net)(net, args.y)
-            print("APL", APL)
-            print("NWR", NWR)
-            print("Fitness value", value)
+            import matplotlib.pyplot as plt
+
+            # Define lists to store data points
+            net_sizes = []
+            rwa_fitness_values = []
+            spff_fitness_values = []
+            print("start")
+
+            # Iterate over network sizes
+            for net_size in range(10, 20, 10):
+                print("d", net_size, rwa_fitness_values, spff_fitness_values)
+                net = DE_Graph_Custom(args.channels, net_size)
+                
+                # RWA
+                APL, NWR, rwa_value = de_algorithm(net)(net, args.y)
+                rwa_fitness_values.append(rwa_value)
+                
+                # SPFF
+                APL, NWR, spff_value = spff_algorithm(net)(net, args.y)
+                spff_fitness_values.append(spff_value)
+                
+                net_sizes.append(net_size)
+
+            # Plotting
+            plt.figure(figsize=(10, 6))
+            plt.plot(net_sizes, rwa_fitness_values, label='RWA')
+            plt.plot(net_sizes, spff_fitness_values, label='SPFF')
+            plt.xlabel('Network Size')
+            plt.ylabel('Fitness Value')
+            plt.title('Fitness Value vs. Network Size for RWA and SPFF Algorithms')
+            plt.legend()
+            plt.grid(True)
+            plt.show()
             return
+        avg_path_length_per_simulation = {}
+        avg_path_length_per_simulation_overall = 0
 
         blocklist = []
         blocks_per_erlang = []
@@ -194,6 +216,7 @@ def simulator(args: Namespace) -> None:
             path_3_to_6_w_1 = 0
             path_3_to_6_w_2 = 0
             success = 0
+            avg_path_length_per_load = 0
             for call in range(args.calls):
                 print("call", call)
                 import random
@@ -254,6 +277,8 @@ def simulator(args: Namespace) -> None:
                     blocks += 1
                     print("no success")
                 else:
+                    avg_path_length_per_load += len(lightpath.r)
+                    avg_path_length_per_simulation_overall += len(lightpath.r)
                     success += 1
                     print("LIGHTPATH", lightpath.r, lightpath.w)
                     if lightpath.w == 0:
@@ -321,6 +346,7 @@ def simulator(args: Namespace) -> None:
 
         sim_time = default_timer() - sim_time
         time_per_simulation.append(sim_time)
+        avg_path_length_per_simulation[load] = avg_path_length_per_load/args.calls
 
         # print('\rBlocks: ', end='', flush=True)
         for b in blocklist:
@@ -334,6 +360,9 @@ def simulator(args: Namespace) -> None:
             args.channels, args.calls, net.name)
 
         write_bp_to_disk(args.result_dir, fbase + '.bp', blocks_per_erlang)
+    avg_path_length_per_simulation_overall = avg_path_length_per_simulation_overall / (args.calls*len(args.load))
+    print("Avg Path Length Overall All Loads", avg_path_length_per_simulation_overall)
+    print("Avg Path Length Per Load", avg_path_length_per_simulation)
 
     write_it_to_disk(args.result_dir, fbase + '.it', time_per_simulation)
 
