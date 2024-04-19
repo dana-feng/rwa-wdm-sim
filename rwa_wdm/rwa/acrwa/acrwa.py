@@ -33,6 +33,7 @@ class AntColonyRWA(object):
         self.routing_tables = {}
         self.desirability = {}
         self.pheromone_table = {}
+        self.wavelength_use_table = {}
 
     def initialization(self, net: Network):
         """
@@ -67,14 +68,20 @@ class AntColonyRWA(object):
                     if i not in self.pheromone_table:
                         # Initialize if not exists
                         self.pheromone_table[i] = {}
+                    if i not in self.wavelength_use_table:
+                        self.wavelength_use_table[i] = {}
 
                     if j not in self.pheromone_table[i]:
                         # Initialize if not exists
                         self.pheromone_table[i][j] = {}
+                    if j not in self.wavelength_use_table[i]:
+                        self.wavelength_use_table[i][j] = {}
 
                     if wavelength not in self.pheromone_table[i][j]:
                         # Initialize if not exists
                         self.pheromone_table[i][j][wavelength] = 0
+                    if wavelength not in self.wavelength_use_table[i][j]:
+                        self.wavelength_use_table[i][j][wavelength] = 1
 
                     # TODO not sure if this is right
                     self.pheromone_table[i][j][wavelength] = 1 / \
@@ -89,7 +96,7 @@ class AntColonyRWA(object):
             for wavelengthk in self.candidate_lambdas_list[nodei]:
                 if net.n[nodei][nodej][wavelengthk]:  # if free
                     curr_product = self.pheromone_table[nodei][nodej][wavelengthk]*(
-                        self.desirability[nodei]**self.beta)
+                        self.desirability[nodei]**self.beta) * (0.99 ** self.wavelength_use_table[nodei][nodej][wavelengthk])
                     if best_product is None or best_product < curr_product:
                         best_product = curr_product
                         u = nodej
@@ -227,3 +234,5 @@ class AntColonyRWA(object):
         delta_tau_ijk = math.exp(-1*self.omega*delta)
         self.pheromone_table[src][dest][k] = (
             1-self.rho1)*tauijk + self.rho1*gammaij*delta_tau_ijk
+        if gammaij == 1:
+            self.wavelength_use_table[src][dest][k] += 1

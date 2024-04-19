@@ -154,6 +154,7 @@ def simulator(args: Namespace) -> None:
 
     """
     global upper_bound
+    upper_bound = 12
 
     # print header for pretty stdout console logging
     print('Load:   ', end='')
@@ -163,10 +164,10 @@ def simulator(args: Namespace) -> None:
     time_per_simulation = []
     for simulation in range(args.num_sim):
         sim_time = default_timer()
-        # net = get_net_instance_from_args(args.topology, args.channels)
-        # rwa = get_rwa_algorithm_from_args(args.r, args.w, args.rwa,
-        #                                   args.pop_size, args.num_gen,
-        #                                   args.cross_rate, args.mut_rate, net)
+        net = get_net_instance_from_args(args.topology, args.channels)
+        rwa = get_rwa_algorithm_from_args(args.r, args.w, args.rwa,
+                                          args.pop_size, args.num_gen,
+                                          args.cross_rate, args.mut_rate, net)
         if args.rwa == "de":
             import matplotlib.pyplot as plt
 
@@ -180,15 +181,15 @@ def simulator(args: Namespace) -> None:
             for net_size in range(10, 20, 10):
                 print("d", net_size, rwa_fitness_values, spff_fitness_values)
                 net = DE_Graph_Custom(args.channels, net_size)
-                
+
                 # RWA
                 APL, NWR, rwa_value = de_algorithm(net)(net, args.y)
                 rwa_fitness_values.append(rwa_value)
-                
+
                 # SPFF
                 APL, NWR, spff_value = spff_algorithm(net)(net, args.y)
                 spff_fitness_values.append(spff_value)
-                
+
                 net_sizes.append(net_size)
 
             # Plotting
@@ -197,13 +198,13 @@ def simulator(args: Namespace) -> None:
             plt.plot(net_sizes, spff_fitness_values, label='SPFF')
             plt.xlabel('Network Size')
             plt.ylabel('Fitness Value')
-            plt.title('Fitness Value vs. Network Size for RWA and SPFF Algorithms')
+            plt.title(
+                'Fitness Value vs. Network Size for RWA and SPFF Algorithms')
             plt.legend()
             plt.grid(True)
             plt.show()
             return
-        avg_path_length_per_simulation = {}
-        avg_path_length_per_simulation_overall = 0
+        avg_path_length_per_simulation = []
 
         blocklist = []
         blocks_per_erlang = []
@@ -216,7 +217,8 @@ def simulator(args: Namespace) -> None:
             path_3_to_6_w_1 = 0
             path_3_to_6_w_2 = 0
             success = 0
-            avg_path_length_per_load = 0
+            path_length_per_load = 0
+            total_light_paths = 0
             for call in range(args.calls):
                 print("call", call)
                 import random
@@ -275,9 +277,9 @@ def simulator(args: Namespace) -> None:
                 if lightpath is None:
                     blocks += 1
                 else:
-                    avg_path_length_per_load += len(lightpath.r)
-                    avg_path_length_per_simulation_overall += len(lightpath.r)
+                    path_length_per_load += len(lightpath.r)
                     success += 1
+                    total_light_paths += 1
                     if lightpath.w == 0:
                         if any([3, 4] == lightpath.r[i:i+2] for i in range(len(lightpath.r) - 1)):
                             path_3_to_4_w_1 += 1
@@ -343,7 +345,7 @@ def simulator(args: Namespace) -> None:
 
         sim_time = default_timer() - sim_time
         time_per_simulation.append(sim_time)
-        avg_path_length_per_simulation[load] = avg_path_length_per_load/args.calls
+        avg_path_length_per_simulation.append(path_length_per_load/success)
 
         # print('\rBlocks: ', end='', flush=True)
         for b in blocklist:
@@ -357,9 +359,10 @@ def simulator(args: Namespace) -> None:
             args.channels, args.calls, net.name)
 
         write_bp_to_disk(args.result_dir, fbase + '.bp', blocks_per_erlang)
-    avg_path_length_per_simulation_overall = avg_path_length_per_simulation_overall / (args.calls*len(args.load))
-    print("Avg Path Length Overall All Loads", avg_path_length_per_simulation_overall)
-    print("Avg Path Length Per Load", avg_path_length_per_simulation)
+    print(avg_path_length_per_simulation)
+    avg_path_length = round(sum(avg_path_length_per_simulation) /
+                            len(avg_path_length_per_simulation), 2)
+    print("Avg Path Length Overall All Loads", avg_path_length)
 
     write_it_to_disk(args.result_dir, fbase + '.it', time_per_simulation)
 
