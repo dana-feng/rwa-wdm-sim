@@ -169,40 +169,88 @@ def simulator(args: Namespace) -> None:
                                           args.pop_size, args.num_gen,
                                           args.cross_rate, args.mut_rate, net)
         if args.rwa == "de":
+
+            print("DIFFERENTIAL EVOLUTION")
+            # APL, NWR, value = rwa(net, args.y) # run once since its computing a optimization value
+            # print("APL", APL)
+            # print("NWR", NWR)
+            # print("Fitness value", value)
+            # print("SHORTEST PATHS/FF")
+            # APL, NWR, value = spff_algorithm(net)(net, args.y) # run once since its computing a optimization value
+            # print("APL", APL)
+            # print("NWR", NWR)
+            # print("Fitness value", value)
+            # return
+
             import matplotlib.pyplot as plt
 
             # Define lists to store data points
             net_sizes = []
             rwa_fitness_values = []
+            rwa_apl_values = []
+            rwa_nwr_values = []
             spff_fitness_values = []
+            spff_apl_values = []
+            spff_nwr_values = []
+
             print("start")
 
             # Iterate over network sizes
-            for net_size in range(10, 20, 10):
+            for net_size in range(10, 200, 10):
                 print("d", net_size, rwa_fitness_values, spff_fitness_values)
                 net = DE_Graph_Custom(args.channels, net_size)
+                net.plot_topology()
+
+                print('starting it now')
 
                 # RWA
                 APL, NWR, rwa_value = de_algorithm(net)(net, args.y)
                 rwa_fitness_values.append(rwa_value)
+                rwa_apl_values.append(APL)
+                rwa_nwr_values.append(NWR)
+
+                print("done with de")
 
                 # SPFF
                 APL, NWR, spff_value = spff_algorithm(net)(net, args.y)
                 spff_fitness_values.append(spff_value)
+                spff_apl_values.append(APL)
+                spff_nwr_values.append(NWR)
 
                 net_sizes.append(net_size)
 
             # Plotting
             plt.figure(figsize=(10, 6))
+
+            # Fitness Value Plot
+            plt.subplot(2, 1, 1)
             plt.plot(net_sizes, rwa_fitness_values, label='RWA')
             plt.plot(net_sizes, spff_fitness_values, label='SPFF')
             plt.xlabel('Network Size')
             plt.ylabel('Fitness Value')
-            plt.title(
-                'Fitness Value vs. Network Size for RWA and SPFF Algorithms')
+            plt.title('Fitness Value vs. Network Size for DE and SPFF Algorithms')
             plt.legend()
             plt.grid(True)
+
+            # APL and NWR Plot
+            plt.subplot(2, 1, 2)
+            plt.plot(net_sizes, rwa_apl_values,
+                     label='RWA APL', linestyle='--')
+            plt.plot(net_sizes, rwa_nwr_values,
+                     label='RWA NWR', linestyle='--')
+            plt.plot(net_sizes, spff_apl_values,
+                     label='SPFF APL', linestyle='-.')
+            plt.plot(net_sizes, spff_nwr_values,
+                     label='SPFF NWR', linestyle='-.')
+            plt.xlabel('Network Size')
+            plt.ylabel('Value')
+            plt.title('APL and NWR vs. Network Size for DE and SPFF Algorithms')
+            plt.legend()
+            plt.grid(True)
+
+            plt.tight_layout()
             plt.show()
+
             return
         avg_path_length_per_simulation = []
 
@@ -228,10 +276,10 @@ def simulator(args: Namespace) -> None:
                 # net.s = random.randint(0, 2)
 
                 # Uncomment for any other network
-                net.d = random.randint(0, upper_bound)
+                net.d = random.randint(0, 12)
 
                 while True:
-                    net.s = random.randint(0, upper_bound)
+                    net.s = random.randint(0, 12)
                     if net.s != net.d:
                         break
 

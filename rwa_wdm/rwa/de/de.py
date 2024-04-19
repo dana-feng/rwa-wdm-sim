@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 from ...net import Network
 import random
 import math
-from ..routing import dijkstra, yen
+from ..routing import dijkstra, yen, yen_ksp_unweighted
 from ..wlassignment import vertex_coloring, first_fit, random_fit
 import copy
 
@@ -12,25 +12,38 @@ __all__ = (
 )
 
 logger = logging.getLogger(__name__)
+from concurrent.futures import ThreadPoolExecutor
+from itertools import product
 
 
 class DE:
+    def initialize_shortest_paths(self, net, n, m, k):
+        return n, m, yen_ksp_unweighted(net.a, n, m, k) #yen(net.a, n, m, k) 
+
     def __init__(self, net: Network):
         self.M = 0.2  # Best control parameter for USA network https://link.springer.com/article/10.1007/s11107-013-0413-3
         self.RC = 0.5  # Control parameter
-        self.NP = 100  # Control parameter
+        self.NP = 10  # Control parameter
         self.Pop = []  # Population initialization
         self.k_shortest_paths = {}
         self.a2 = 0.5
         self.a1 = 1 - self.a2
         self.k = 3
-        for n in range(net.nnodes):
-            # Initialize routing tables using the routing protocol
-            self.k_shortest_paths[n] = {}
-            for m in range(n + 1, net.nnodes):
-                self.k_shortest_paths[n][m] = []
-                self.k_shortest_paths[n][m].extend(yen(net.a, n, m, self.k))
 
+        # Create a ThreadPoolExecutor with max_workers equal to the number of available CPU cores
+        with ThreadPoolExecutor() as executor:
+            # Parallelize the outer loop
+            futures = []
+            for n in range(net.nnodes):
+                self.k_shortest_paths[n] = {}
+                for m in range(n + 1, net.nnodes):
+                    futures.append(executor.submit(self.initialize_shortest_paths, net, n, m, self.k))
+
+            # Retrieve results from futures and populate k_shortest_paths
+            for future in futures:
+                n, m, paths = future.result()
+                self.k_shortest_paths[n][m] = paths
+        print("shortest paths", self.k_shortest_paths)
         # calculate n1 and n2
         APL = 0
         for n in range(net.nnodes):
@@ -106,12 +119,11 @@ class DE:
 
     def run(self, net: Network, k):
         self.initialize_population(net)
-        max_generations = 100
+        max_generations = 1000
         best_one = None
         while not max_generations <= 0:
             selected_population = []
             for xi in self.Pop:
-                # print("Candidate", xi)
                 best_one = self.selection(best_one, xi, net)
                 selected_individuals = random.sample(self.Pop, 3)
                 mutated_individual = self.mutation(selected_individuals)

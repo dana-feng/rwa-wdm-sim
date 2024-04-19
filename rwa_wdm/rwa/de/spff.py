@@ -3,34 +3,48 @@ from typing import List, Tuple, Union
 from ...net import Network
 import random
 import math
-from ..routing import dijkstra, yen
+from ..routing import dijkstra, yen, yen_ksp_unweighted
 from ..wlassignment import vertex_coloring, first_fit, random_fit
 import copy
-
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
 
 class SPFF:
+    def initialize_shortest_paths(self, net, n, m, k):
+        return n, m, yen_ksp_unweighted(net.a, n, m, k) #yen(net.a, n, m, k) 
+
     def __init__(self, net: Network):
         self.k = 3
         self.a2 = 0.5
         self.a1 = 1 - self.a2
         self.k_shortest_paths = {}
-        for n in range(net.nnodes):
-            # Initialize routing tables using the routing protocol
-            self.k_shortest_paths[n] = {}
-            for m in range(n + 1, net.nnodes):
-                self.k_shortest_paths[n][m] = []
-                self.k_shortest_paths[n][m].extend(yen(net.a, n, m, self.k))
-            # calculate n1 and n2
+
+        # Create a ThreadPoolExecutor with max_workers equal to the number of available CPU cores
+        with ThreadPoolExecutor() as executor:
+            # Parallelize the outer loop
+            futures = []
+            for n in range(net.nnodes):
+                self.k_shortest_paths[n] = {}
+                for m in range(n + 1, net.nnodes):
+                    futures.append(executor.submit(self.initialize_shortest_paths, net, n, m, self.k))
+
+            # Retrieve results from futures and populate k_shortest_paths
+            for future in futures:
+                n, m, paths = future.result()
+                self.k_shortest_paths[n][m] = paths
+
+        # calculate n1 and n2
         APL = 0
         for n in range(net.nnodes):
             for m in range(n + 1, net.nnodes):
-                APL += len(self.k_shortest_paths[n][m][2])
+                max_index = len(self.k_shortest_paths[n][m]) - 1
+                APL += len(self.k_shortest_paths[n][m][max_index])
         APL = APL / (net.nnodes * (net.nnodes - 1))
         self.n1 = net.nnodes
         self.n2 = APL
+
 
 
     def calculate_NWR(self, ind, net: Network):
@@ -69,5 +83,5 @@ class SPFF:
     def run(self, net: Network, k):
         total = (net.nnodes * (net.nnodes - 1)) // 2
         best_one = [0 for _ in range(total)]
-        print("best one", best_one)
+        # print("best one", best_one)
         return self.objective_function(best_one, net)

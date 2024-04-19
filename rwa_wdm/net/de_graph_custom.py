@@ -30,5 +30,5 @@ class DE_Graph_Custom(Network):
         """Get position of the nodes on the bidimensional Cartesian plan"""
         node_positions = OrderedDict()
         for i in range(self.num_nodes):
-            node_positions[str(i)] = (random.uniform(0, 100), random.uniform(0, 100))  # Adjust range as needed
+            node_positions[str(i)] = (random.uniform(0, 20), random.uniform(0, 20))  # Adjust range as needed
         return node_positions
