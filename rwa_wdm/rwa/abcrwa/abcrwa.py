@@ -65,7 +65,8 @@ class ArtificialBeeColonyRWA:
         if not self.routing_table:
             self.routing_table = self.generate_routing_table(net)
 
-        self.solutions = self.generate_initial_solutions(net)
+        # self.generate_initial_solutions(net)
+        self.solutions = self.generate_random_initial_solutions(net)
         self.best_solution = None
         self.best_fitness = float('inf')
         self.evaluate_population(net)
@@ -86,6 +87,9 @@ class ArtificialBeeColonyRWA:
             wavelength = random.randint(0, net.nchannels - 1)
             initial_solutions.append({'path': path, 'wavelength': wavelength})
         return initial_solutions
+
+    def generate_random_initial_solutions(self, net):
+        return [self.generate_random_solution(net) for _ in range(self.colony_size)]
 
     def generate_random_solution(self, net):
         # Generate a random route and wavelength TODO: RECONSIDER -- curently possibly invalid solution
