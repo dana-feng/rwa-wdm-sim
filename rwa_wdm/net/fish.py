@@ -11,7 +11,7 @@ class Fish(Network):
         self._name = 'fish'
         self._fullname = u'Fish'
         self._s = 0
-        self._d = 12
+        self._d = 7
         super().__init__(ch_n,
                          len(self.get_nodes_2D_pos()),
                          len(self.get_edges()))
