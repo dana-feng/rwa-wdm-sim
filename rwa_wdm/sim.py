@@ -198,7 +198,6 @@ def simulator(args: Namespace) -> None:
             for net_size in range(10, 200, 10):
                 print("d", net_size, rwa_fitness_values, spff_fitness_values)
                 net = DE_Graph_Custom(args.channels, net_size)
-                net.plot_topology()
 
                 print('starting it now')
                 
